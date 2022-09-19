@@ -1,4 +1,4 @@
-name: Pip.Services GRPC Go Delivery
+name: Pip.Services GRPC Gox Delivery
 
 # Configure trigger rules
 on: 
