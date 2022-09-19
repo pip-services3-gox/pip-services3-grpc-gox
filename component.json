@@ -1,5 +1,5 @@
 {
-    "name":  "pip-services3-grpc-go",
+    "name":  "pip-services3-grpc-gox",
     "type": "module",
     "language": "go",
     "version": "1.2.3",
