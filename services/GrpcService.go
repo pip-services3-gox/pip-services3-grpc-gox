@@ -21,81 +21,80 @@ type IGrpcServiceOverrides interface {
 	Register()
 }
 
-/*
-GrpcService abstract service that receives remove calls via GRPC protocol.
-
-Configuration parameters:
-
-  - dependencies:
-    - endpoint:              override for GRPC Endpoint dependency
-    - controller:            override for Controller dependency
-  - connection(s):
-    - discovery_key:         (optional) a key to retrieve the connection from connect.idiscovery.html IDiscovery
-    - protocol:              connection protocol: http or https
-    - host:                  host name or IP address
-    - port:                  port number
-    - uri:                   resource URI or connection string with all parameters in it
-  - credential - the HTTPS credentials:
-    - ssl_key_file:         the SSL private key in PEM
-    - ssl_crt_file:         the SSL certificate in PEM
-    - ssl_ca_file:          the certificate authorities (root cerfiticates) in PEM
-
-References:
-
-- *:logger:*:*:1.0               (optional) ILogger components to pass log messages
-- *:counters:*:*:1.0             (optional) ICounters components to pass collected measurements
-- *:discovery:*:*:1.0            (optional) IDiscovery services to resolve connection
-- *:endpoint:grpc:*:1.0           (optional) GrpcEndpoint reference
-
-See GrpcClient
-
-Example:
-
-    type MyGrpcService struct{
-       *GrpcService
-       controller IMyController;
-    }
-    ...
-
-       func NewMyGrpcService() *MyGrpcService {
-           c := NewMyGrpcService{}
-           c.GrpcService = grpcservices.NewGrpcService("Mydata.Mydatas")
-           c.GrpcService.IRegisterable = &c
-           c.numberOfCalls = 0
-           c.DependencyResolver.Put("controller", cref.NewDescriptor("mygroup", "controller", "*", "*", "*"))
-           return &c
-       }
-
-       func (c*MyGrpcService) SetReferences(references: IReferences) {
-            c.GrpcService.SetReferences(references);
-            resolv, err := c.DependencyResolver.GetOneRequired("controller")
-            if err == nil && resolv != nil {
-                c.controller = resolv.(grpctest.IMyController)
-                return
-            }
-            panic("Can't resolve 'controller' reference")
-       }
-
-       func (c*MyGrpcService) Register() {
-           protos.RegisterMyDataServer(c.Endpoint.GetServer(), c)
-           ...
-       }
-
-    service := NewMyGrpcService();
-    service.Configure(cconf.NewConfigParamsFromTuples(
-        "connection.protocol", "http",
-        "connection.host", "localhost",
-        "connection.port", 8080,
-    ));
-    service.SetReferences(cref.NewReferencesFromTuples(
-       cref.NewDescriptor("mygroup","controller","default","default","1.0"), controller
-    ));
-
-    err := service.Open("123")
-    if  err == nil {
-       fmt.Println("The GRPC service is running on port 8080");
-    }
-*/
+// GrpcService abstract service that receives remove calls via GRPC protocol.
+//
+//	Configuration parameters:
+//
+//	- dependencies:
+//		- endpoint:              override for GRPC Endpoint dependency
+//		- controller:            override for Controller dependency
+//	- connection(s):
+//		- discovery_key:         (optional) a key to retrieve the connection from connect.idiscovery.html IDiscovery
+//		- protocol:              connection protocol: http or https
+//		- host:                  host name or IP address
+//		- port:                  port number
+//		- uri:                   resource URI or connection string with all parameters in it
+//	- credential - the HTTPS credentials:
+//		- ssl_key_file:         the SSL private key in PEM
+//		- ssl_crt_file:         the SSL certificate in PEM
+//		- ssl_ca_file:          the certificate authorities (root cerfiticates) in PEM
+//
+//	References:
+//
+//		- *:logger:*:*:1.0               (optional) ILogger components to pass log messages
+//		- *:counters:*:*:1.0             (optional) ICounters components to pass collected measurements
+//		- *:discovery:*:*:1.0            (optional) IDiscovery services to resolve connection
+//		- *:endpoint:grpc:*:1.0           (optional) GrpcEndpoint reference
+//
+// See GrpcClient
+//
+// Example:
+//
+//	type MyGrpcService struct{
+//	   *GrpcService
+//	   controller IMyController;
+//	}
+//	...
+//
+//	func NewMyGrpcService() *MyGrpcService {
+//		c := NewMyGrpcService{}
+//		c.GrpcService = grpcservices.NewGrpcService("Mydata.Mydatas")
+//		c.GrpcService.IRegisterable = &c
+//		c.numberOfCalls = 0
+//		c.DependencyResolver.Put(context.Context(), "controller", cref.NewDescriptor("mygroup", "controller", "*", "*", "*"))
+//		return &c
+//	}
+//
+//	func (c*MyGrpcService) SetReferences(ctx context.Context, references: IReferences) {
+//		c.GrpcService.SetReferences(references);
+//		resolv, err := c.DependencyResolver.GetOneRequired("controller")
+//		if err == nil && resolv != nil {
+//		    c.controller = resolv.(grpctest.IMyController)
+//		    return
+//		}
+//		panic("Can't resolve 'controller' reference")
+//	}
+//
+//	func (c*MyGrpcService) Register() {
+//		protos.RegisterMyDataServer(c.Endpoint.GetServer(), c)
+//		...
+//	}
+//
+//	service := NewMyGrpcService();
+//	service.Configure(ctx, cconf.NewConfigParamsFromTuples(
+//	    "connection.protocol", "http",
+//	    "connection.host", "localhost",
+//	    "connection.port", 8080,
+//	));
+//	service.SetReferences(ctx, cref.NewReferencesFromTuples(
+//	   cref.NewDescriptor("mygroup","controller","default","default","1.0"), controller
+//	));
+//
+//	err := service.Open(ctx, "123")
+//	if  err == nil {
+//	   fmt.Println("The GRPC service is running on port 8080");
+//	}
+//
 type GrpcService struct {
 	Overrides IGrpcServiceOverrides
 
@@ -131,30 +130,33 @@ func InheritGrpcService(overrides IGrpcServiceOverrides, serviceName string) *Gr
 	c.defaultConfig = cconf.NewConfigParamsFromTuples(
 		"dependencies.endpoint", "*:endpoint:grpc:*:1.0",
 	)
-	c.DependencyResolver = cref.NewDependencyResolverWithParams(c.defaultConfig, cref.NewEmptyReferences())
+	c.DependencyResolver = cref.NewDependencyResolverWithParams(context.Background(), c.defaultConfig, cref.NewEmptyReferences())
 	c.Logger = clog.NewCompositeLogger()
 	c.Counters = ccount.NewCompositeCounters()
-	c.Tracer = ctrace.NewCompositeTracer(nil)
+	c.Tracer = ctrace.NewCompositeTracer()
 	return c
 }
 
 // Configure method are configures component by passing configuration parameters.
-//   - config   configuration parameters to be set.
-func (c *GrpcService) Configure(config *cconf.ConfigParams) {
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- config   configuration parameters to be set.
+func (c *GrpcService) Configure(ctx context.Context, config *cconf.ConfigParams) {
 	config = config.SetDefaults(c.defaultConfig)
 	c.config = config
-	c.DependencyResolver.Configure(config)
+	c.DependencyResolver.Configure(ctx, config)
 }
 
 //SetReferences method are sets references to dependent components.
-// Parameters:
-//   - references 	references to locate the component dependencies.
-func (c *GrpcService) SetReferences(references cref.IReferences) {
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- references 	references to locate the component dependencies.
+func (c *GrpcService) SetReferences(ctx context.Context, references cref.IReferences) {
 	c.references = references
-	c.Logger.SetReferences(references)
-	c.Counters.SetReferences(references)
-	c.Tracer.SetReferences(references)
-	c.DependencyResolver.SetReferences(references)
+	c.Logger.SetReferences(ctx, references)
+	c.Counters.SetReferences(ctx, references)
+	c.Tracer.SetReferences(ctx, references)
+	c.DependencyResolver.SetReferences(ctx, references)
 	// Get endpoint
 	res := c.DependencyResolver.GetOneOptional("endpoint")
 	c.Endpoint, _ = res.(*GrpcEndpoint)
@@ -181,40 +183,42 @@ func (c *GrpcService) UnsetReferences() {
 func (c *GrpcService) createEndpoint() *GrpcEndpoint {
 	endpoint := NewGrpcEndpoint()
 	if c.config != nil {
-		endpoint.Configure(c.config)
+		endpoint.Configure(context.Background(), c.config)
 	}
 	if c.references != nil {
-		endpoint.SetReferences(c.references)
+		endpoint.SetReferences(context.Background(), c.references)
 	}
 	return endpoint
 }
 
 // Instrument method are adds instrumentation to log calls and measure call time.
 // It returns a Timing object that is used to end the time measurement.
-// Parameters:
-//   - correlationId     (optional) transaction id to trace execution through call chain.
-//   - name              a method name.
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- correlationId     (optional) transaction id to trace execution through call chain.
+//		- name              a method name.
 // Return Timing object to end the time measurement.
-func (c *GrpcService) Instrument(correlationId string, name string) *rpcserv.InstrumentTiming {
-	c.Logger.Trace(correlationId, "Executing %s method", name)
-	c.Counters.IncrementOne(name + ".exec_count")
+func (c *GrpcService) Instrument(ctx context.Context, correlationId string, name string) *rpcserv.InstrumentTiming {
+	c.Logger.Trace(ctx, correlationId, "Executing %s method", name)
+	c.Counters.IncrementOne(ctx, name+".exec_count")
 
-	counterTiming := c.Counters.BeginTiming(name + ".exec_time")
-	traceTiming := c.Tracer.BeginTrace(correlationId, name, "")
+	counterTiming := c.Counters.BeginTiming(ctx, name+".exec_time")
+	traceTiming := c.Tracer.BeginTrace(ctx, correlationId, name, "")
 	return rpcserv.NewInstrumentTiming(correlationId, name, "exec",
 		c.Logger, c.Counters, counterTiming, traceTiming)
 }
 
 // InstrumentError method are adds instrumentation to error handling.
-// Parameters:
-//   - correlationId     (optional) transaction id to trace execution through call chain.
-//   - name              a method name.
-//   - errIn               an occured error
-//   - resIn            (optional) an execution result
-// Returns: result interface{}, err error
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- correlationId     (optional) transaction id to trace execution through call chain.
+//		- name              a method name.
+//		- errIn               an occured error
+//		- resIn            (optional) an execution result
+// Returns: result any, err error
 // input result and error
 // func (c *GrpcService) InstrumentError(correlationId string, name string, errIn error,
-// 	resIn interface{}) (result interface{}, err error) {
+// 	resIn any) (result any, err error) {
 // 	if errIn != nil {
 // 		c.Logger.Error(correlationId, errIn, "Failed to execute %s method", name)
 // 		c.Counters.IncrementOne(name + ".exec_errors")
@@ -229,10 +233,11 @@ func (c *GrpcService) IsOpen() bool {
 }
 
 // Open method are opens the component.
-// Parameters:
-//   - correlationId 	(optional) transaction id to trace execution through call chain.
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- correlationId 	(optional) transaction id to trace execution through call chain.
 // Returns: error or nil no errors occured.
-func (c *GrpcService) Open(correlationId string) (err error) {
+func (c *GrpcService) Open(ctx context.Context, correlationId string) (err error) {
 	if c.opened {
 		return nil
 	}
@@ -244,7 +249,7 @@ func (c *GrpcService) Open(correlationId string) (err error) {
 	}
 
 	if c.localEndpoint {
-		opnErr := c.Endpoint.Open(correlationId)
+		opnErr := c.Endpoint.Open(ctx, correlationId)
 		if opnErr != nil {
 			c.opened = false
 			return opnErr
@@ -255,10 +260,11 @@ func (c *GrpcService) Open(correlationId string) (err error) {
 }
 
 // Close method are closes component and frees used resources.
-// Parameters:
-//   - correlationId 	(optional) transaction id to trace execution through call chain.
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- correlationId 	(optional) transaction id to trace execution through call chain.
 // Returns: error or nil no errors occured.
-func (c *GrpcService) Close(correlationId string) (err error) {
+func (c *GrpcService) Close(ctx context.Context, correlationId string) (err error) {
 	if !c.opened {
 		return nil
 	}
@@ -268,7 +274,7 @@ func (c *GrpcService) Close(correlationId string) (err error) {
 	}
 
 	if c.localEndpoint {
-		clsErr := c.Endpoint.Close(correlationId)
+		clsErr := c.Endpoint.Close(ctx, correlationId)
 		if clsErr != nil {
 			c.opened = false
 			return clsErr
@@ -279,23 +285,25 @@ func (c *GrpcService) Close(correlationId string) (err error) {
 }
 
 // RegisterCommadableMethod method are registers a commandable method in c objects GRPC server (service) by the given name.,
-// Parameters:
-//   - method        the GRPC method name.
-//   - schema        the schema to use for parameter validation.
-//   - action        the action to perform at the given route.
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- method        the GRPC method name.
+//		- schema        the schema to use for parameter validation.
+//		- action        the action to perform at the given route.
 func (c *GrpcService) RegisterCommadableMethod(method string, schema *cvalid.Schema,
-	action func(correlationId string, data *crun.Parameters) (result interface{}, err error)) {
+	action func(ctx context.Context, correlationId string, data *crun.Parameters) (result any, err error)) {
 	c.Endpoint.RegisterCommadableMethod(method, schema, action)
 }
 
 // Registers a middleware for methods in GRPC endpoint.
-// - action        an action function that is called when middleware is invoked.
-func (c *GrpcService) RegisterUnaryInterceptor(action func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error)) {
+//	Parameters:
+//		- action        an action function that is called when middleware is invoked.
+func (c *GrpcService) RegisterUnaryInterceptor(action func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error)) {
 	if c.Endpoint == nil {
 		return
 	}
 
-	c.Endpoint.AddInterceptors(grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	c.Endpoint.AddInterceptors(grpc.UnaryInterceptor(func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		if strings.HasPrefix(info.FullMethod, "/"+c.serviceName+"/") {
 			return action(ctx, req, info, handler)
 		}
@@ -309,14 +317,14 @@ func (c *GrpcService) Register() {
 	c.Overrides.Register()
 }
 
-func (c *GrpcService) ValidateRequest(request interface{}, schema *cvalid.Schema) error {
+func (c *GrpcService) ValidateRequest(request any, schema *cvalid.Schema) error {
 
 	buf, err := json.Marshal(request)
 	if err != nil {
 		return err
 	}
 
-	validateObj := make(map[string]interface{})
+	validateObj := make(map[string]any)
 	err = json.Unmarshal(buf, &validateObj)
 	if err != nil {
 		return err

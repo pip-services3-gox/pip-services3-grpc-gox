@@ -18,7 +18,7 @@ import (
 )
 
 type DummyGrpcService struct {
-	grpcservices.GrpcService
+	*grpcservices.GrpcService
 	controller    tlogic.IDummyController
 	numberOfCalls int64
 
@@ -27,14 +27,14 @@ type DummyGrpcService struct {
 
 func NewDummyGrpcService() *DummyGrpcService {
 	c := &DummyGrpcService{}
-	c.GrpcService = *grpcservices.InheritGrpcService(c, "dummies.Dummies")
+	c.GrpcService = grpcservices.InheritGrpcService(c, "dummies.Dummies")
 	c.numberOfCalls = 0
-	c.DependencyResolver.Put("controller", cref.NewDescriptor("pip-services-dummies", "controller", "default", "*", "*"))
+	c.DependencyResolver.Put(context.Background(), "controller", cref.NewDescriptor("pip-services-dummies", "controller", "default", "*", "*"))
 	return c
 }
 
-func (c *DummyGrpcService) SetReferences(references cref.IReferences) {
-	c.GrpcService.SetReferences(references)
+func (c *DummyGrpcService) SetReferences(ctx context.Context, references cref.IReferences) {
+	c.GrpcService.SetReferences(ctx, references)
 	resolv, err := c.DependencyResolver.GetOneRequired("controller")
 	if err == nil && resolv != nil {
 		c.controller = resolv.(tlogic.IDummyController)
@@ -47,21 +47,21 @@ func (c *DummyGrpcService) GetNumberOfCalls() int64 {
 	return c.numberOfCalls
 }
 
-func (c *DummyGrpcService) incrementNumberOfCalls(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func (c *DummyGrpcService) incrementNumberOfCalls(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 
 	m, err := handler(ctx, req)
 	if err != nil {
-		c.Logger.Error("", err, "RPC failed with error %v", err.Error())
+		c.Logger.Error(ctx, "", err, "RPC failed with error %v", err.Error())
 	}
 	c.numberOfCalls++
 	return m, err
 }
 
-func (c *DummyGrpcService) Open(correlationId string) error {
+func (c *DummyGrpcService) Open(ctx context.Context, correlationId string) error {
 
 	// Add interceptors
 	c.RegisterUnaryInterceptor(c.incrementNumberOfCalls)
-	return c.GrpcService.Open(correlationId)
+	return c.GrpcService.Open(ctx, correlationId)
 }
 
 func (c *DummyGrpcService) GetDummies(ctx context.Context, req *protos.DummiesPageRequest) (*protos.DummiesPage, error) {

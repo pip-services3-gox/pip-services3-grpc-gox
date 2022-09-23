@@ -16,6 +16,7 @@ import (
 )
 
 func TestDummyCommandableGrpcService(t *testing.T) {
+	ctx := context.Background()
 
 	grpcConfig := cconf.NewConfigParamsFromTuples(
 		"connection.protocol", "http",
@@ -30,15 +31,15 @@ func TestDummyCommandableGrpcService(t *testing.T) {
 
 	ctrl := tlogic.NewDummyController()
 	service = NewDummyCommandableGrpcService()
-	service.Configure(grpcConfig)
+	service.Configure(ctx, grpcConfig)
 
-	references := cref.NewReferencesFromTuples(
+	references := cref.NewReferencesFromTuples(ctx,
 		cref.NewDescriptor("pip-services-dummies", "controller", "default", "default", "1.0"), ctrl,
 		cref.NewDescriptor("pip-services-dummies", "service", "grpc", "default", "1.0"), service,
 	)
-	service.SetReferences(references)
-	service.Open("")
-	defer service.Close("")
+	service.SetReferences(ctx, references)
+	service.Open(ctx, "")
+	defer service.Close(ctx, "")
 
 	opts := []grpc.DialOption{
 		grpc.WithInsecure(),
@@ -58,7 +59,7 @@ func TestDummyCommandableGrpcService(t *testing.T) {
 
 	request := cmdproto.InvokeRequest{}
 
-	requestParams := make(map[string]interface{})
+	requestParams := make(map[string]any)
 	requestParams["dummy"] = Dummy1
 	jsonBuf, _ := json.Marshal(requestParams)
 
@@ -133,7 +134,7 @@ func TestDummyCommandableGrpcService(t *testing.T) {
 	delParam["dummy_id"] = dummy1.Id
 	jsonBuf, _ = json.Marshal(delParam)
 
-	request.Method = "dummy.delete_dummy"
+	request.Method = "dummy.delete_dummy_by_id"
 	request.ArgsEmpty = false
 	request.ArgsJson = string(jsonBuf)
 	response, err = client.Invoke(context.TODO(), &request)

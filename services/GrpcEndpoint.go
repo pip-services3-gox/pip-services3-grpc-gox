@@ -21,55 +21,53 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-/*
-GrpcEndpoint used for creating GRPC endpoints. An endpoint is a URL, at which a given service can be accessed by a client.
-
-Configuration parameters:
-
-Parameters to pass to the configure method for component configuration:
-
-- connection(s) - the connection resolver"s connections:
-    - "connection.discovery_key" - the key to use for connection resolving in a discovery service;
-    - "connection.protocol" - the connection"s protocol;
-    - "connection.host" - the target host;
-    - "connection.port" - the target port;
-    - "connection.uri" - the target URI.
-- credential - the HTTPS credentials:
-    - "credential.ssl_key_file" - the SSL private key in PEM
-    - "credential.ssl_crt_file" - the SSL certificate in PEM
-    - "credential.ssl_ca_file" - the certificate authorities (root cerfiticates) in PEM
-
-References:
-
-A logger, counters, and a connection resolver can be referenced by passing the
-following references to the object"s setReferences method:
-
-- logger: "*:logger:*:*:1.0";
-- counters: "*:counters:*:*:1.0";
-- discovery: "*:discovery:*:*:1.0" (for the connection resolver).
-
-Examples:
-
-    func (c* Endpoint) MyMethod(config ConfigParams, references IReferences) {
-        endpoint := NewGrpcEndpoint();
-        if c.config != nil {
-            endpoint.Configure(c._config);
-        }
-        if c.references != nil {
-            endpoint.SetReferences(c.references);
-        }
-        ...
-
-        err := c.endpoint.Open(correlationId)
-        if err != nil {
-            // error ocured
-            return err
-        }
-        c.Opened = true
-        return nil
-        ...
-    }
-*/
+// GrpcEndpoint used for creating GRPC endpoints. An endpoint is a URL, at which a given service can be accessed by a client.
+//
+// Configuration parameters:
+//
+// Parameters to pass to the configure method for component configuration:
+//
+//	Configuration parameters
+//
+//	- connection(s) - the connection resolver"s connections:
+//		- discovery_key - the key to use for connection resolving in a discovery service;
+//		- protocol - the connection"s protocol
+//		- host - the target host;
+//		- port - the target port;
+//		- uri - the target URI.
+//	- credential(s) - the HTTPS credentials:
+//		- ssl_key_file - the SSL private key in PEM
+//		- ssl_crt_file - the SSL certificate in PEM
+//		- ssl_ca_file - the certificate authorities (root cerfiticates) in PEM
+//
+//	References:
+//
+//		- logger: "*:logger:*:*:1.0";
+//		- counters: "*:counters:*:*:1.0";
+//		- discovery: "*:discovery:*:*:1.0" (for the connection resolver).
+//
+//	Examples:
+//
+//    func (c* Endpoint) MyMethod(ctx context.Context, config ConfigParams, references IReferences) {
+//        endpoint := NewGrpcEndpoint();
+//        if c.config != nil {
+//            endpoint.Configure(ctx, c._config);
+//        }
+//        if c.references != nil {
+//            endpoint.SetReferences(ctx, c.references);
+//        }
+//        ...
+//
+//        err := c.endpoint.Open(ctx, correlationId)
+//        if err != nil {
+//            // error ocured
+//            return err
+//        }
+//        c.Opened = true
+//        return nil
+//        ...
+//    }
+//
 type GrpcEndpoint struct {
 	defaultConfig      *cconf.ConfigParams
 	server             *grpc.Server
@@ -80,7 +78,7 @@ type GrpcEndpoint struct {
 	fileMaxSize        int64
 	uri                string
 	registrations      []IRegisterable
-	commandableMethods map[string]func(correlationId string, args *crun.Parameters) (result interface{}, err error)
+	commandableMethods map[string]func(ctx context.Context, correlationId string, args *crun.Parameters) (result any, err error)
 	commandableSchemas map[string]*cvalid.Schema
 	interceptors       []grpc.ServerOption
 }
@@ -110,7 +108,7 @@ func NewGrpcEndpoint() *GrpcEndpoint {
 	c.maintenanceEnabled = false
 	c.fileMaxSize = 200 * 1024 * 1024
 	c.registrations = make([]IRegisterable, 0)
-	c.commandableMethods = make(map[string]func(correlationId string, args *crun.Parameters) (result interface{}, err error), 0)
+	c.commandableMethods = make(map[string]func(ctx context.Context, correlationId string, args *crun.Parameters) (result any, err error), 0)
 	c.commandableSchemas = make(map[string]*cvalid.Schema, 0)
 	c.interceptors = make([]grpc.ServerOption, 0, 0)
 	return &c
@@ -118,21 +116,22 @@ func NewGrpcEndpoint() *GrpcEndpoint {
 
 // Configure method are configures c HttpEndpoint using the given configuration parameters.
 // Configuration parameters:
-//    - connection(s) - the connection resolver"s connections;
-//        - "connection.discovery_key" - the key to use for connection resolving in a discovery service;
-//        - "connection.protocol" - the connection"s protocol;
-//        - "connection.host" - the target host;
-//        - "connection.port" - the target port;
-//        - "connection.uri" - the target URI.
-//        - "credential.ssl_key_file" - SSL private key in PEM
-//        - "credential.ssl_crt_file" - SSL certificate in PEM
-//        - "credential.ssl_ca_file" - Certificate authority (root certificate) in PEM
-// Parameters:
-//    - config    configuration parameters, containing a "connection(s)" section.
+//	- connection(s) - the connection resolver"s connections;
+//		- "connection.discovery_key" - the key to use for connection resolving in a discovery service;
+//		- "connection.protocol" - the connection"s protocol;
+//		- "connection.host" - the target host;
+//		- "connection.port" - the target port;
+//		- "connection.uri" - the target URI.
+//		- "credential.ssl_key_file" - SSL private key in PEM
+//		- "credential.ssl_crt_file" - SSL certificate in PEM
+//		- "credential.ssl_ca_file" - Certificate authority (root certificate) in PEM
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- config    configuration parameters, containing a "connection(s)" section.
 // See ConfigParams (in the PipServices "Commons" package)
-func (c *GrpcEndpoint) Configure(config *cconf.ConfigParams) {
+func (c *GrpcEndpoint) Configure(ctx context.Context, config *cconf.ConfigParams) {
 	config = config.SetDefaults(c.defaultConfig)
-	c.connectionResolver.Configure(config)
+	c.connectionResolver.Configure(ctx, config)
 
 	c.maintenanceEnabled = config.GetAsBooleanWithDefault("options.maintenance_enabled", c.maintenanceEnabled)
 	c.fileMaxSize = config.GetAsLongWithDefault("options.file_max_size", c.fileMaxSize)
@@ -143,14 +142,15 @@ func (c *GrpcEndpoint) Configure(config *cconf.ConfigParams) {
 //    - logger: "*:logger:*:*:1.0"
 //    - counters: "*:counters:*:*:1.0"
 //    - discovery: "*:discovery:*:*:1.0" (for the connection resolver)
-// Parameters:
-//    - references    an IReferences object, containing references to a logger, counters,
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- references    an IReferences object, containing references to a logger, counters,
 //                         and a connection resolver.
 // See IReferences (in the PipServices "Commons" package)
-func (c *GrpcEndpoint) SetReferences(references cref.IReferences) {
-	c.logger.SetReferences(references)
-	c.counters.SetReferences(references)
-	c.connectionResolver.SetReferences(references)
+func (c *GrpcEndpoint) SetReferences(ctx context.Context, references cref.IReferences) {
+	c.logger.SetReferences(ctx, references)
+	c.counters.SetReferences(ctx, references)
+	c.connectionResolver.SetReferences(ctx, references)
 }
 
 // IsOpen method are return whether or not c endpoint is open with an actively listening GRPC server.
@@ -160,10 +160,11 @@ func (c *GrpcEndpoint) IsOpen() bool {
 
 // Open method are opens a connection using the parameters resolved by the referenced connection
 // resolver and creates a GRPC server (service) using the set options and parameters.
-// Parameters:
-//    - correlationId     (optional) transaction id to trace execution through call chain.
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- correlationId     (optional) transaction id to trace execution through call chain.
 // Retunrns: an error if one is raised.
-func (c *GrpcEndpoint) Open(correlationId string) (err error) {
+func (c *GrpcEndpoint) Open(ctx context.Context, correlationId string) (err error) {
 
 	if c.IsOpen() {
 		return nil
@@ -194,11 +195,12 @@ func (c *GrpcEndpoint) Open(correlationId string) (err error) {
 		return cerr.NewConnectionError(correlationId, "CAN'T_CREATE_SRV", "Opening GRPC service failed").
 			Wrap(err).WithDetails("url", c.uri)
 	}
+
 	err = c.connectionResolver.Register(correlationId)
 	if err != nil {
 		return err
 	}
-	c.logger.Debug(correlationId, "Opened GRPC service at tcp:\\\\%s", c.uri)
+
 	// Start operations
 	c.performRegistrations()
 
@@ -207,17 +209,21 @@ func (c *GrpcEndpoint) Open(correlationId string) (err error) {
 		if servErr != nil {
 			err := cerr.NewConnectionError(correlationId, "CANNOT_CONNECT", "Opening GRPC service failed").
 				Wrap(err).WithDetails("url", c.uri)
-			c.logger.Debug(correlationId, "Opened GRPC service at %s", err)
+			panic(err)
 		}
 	}()
+
+	c.logger.Debug(ctx, correlationId, "Opened GRPC service at tcp:\\\\%s", c.uri)
+
 	return nil
 }
 
 // Close methods are closes c endpoint and the GRPC server (service) that was opened earlier.
-// Parameters:
-//   - correlationId     (optional) transaction id to trace execution through call chain.
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- correlationId     (optional) transaction id to trace execution through call chain.
 // Returns: an error if one is raised.
-func (c *GrpcEndpoint) Close(correlationId string) (err error) {
+func (c *GrpcEndpoint) Close(ctx context.Context, correlationId string) (err error) {
 	if c.server != nil {
 		c.uri = ""
 
@@ -225,13 +231,15 @@ func (c *GrpcEndpoint) Close(correlationId string) (err error) {
 		c.commandableSchemas = nil
 
 		c.server.GracefulStop()
-		c.logger.Debug(correlationId, "Closed GRPC service at %s", c.uri)
+		c.logger.Debug(ctx, correlationId, "Closed GRPC service at %s", c.uri)
 		c.server = nil
 	}
+
 	return nil
 }
 
 // GetServer return working gRPC server for register services
+// Note: this server is async working in goroutione, wrap into locks if you want change this variable
 // Returns *grpc.Server
 func (c *GrpcEndpoint) GetServer() *grpc.Server {
 	return c.server
@@ -288,17 +296,21 @@ func (c *GrpcEndpoint) registerCommandableService() {
 
 // RegisterService method are registers a service with related implementation
 //   - implementation the service implementation method Invoke.
-func (c *GrpcEndpoint) RegisterService(sd *grpc.ServiceDesc, implementation interface{}) {
+func (c *GrpcEndpoint) RegisterService(sd *grpc.ServiceDesc, implementation any) {
 	if c.server != nil {
 		c.server.RegisterService(sd, implementation)
 	}
 }
 
 // Invoke method for implements interface grpcproto.CommandableServer
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- request *grpcproto.InvokeRequest request struct
+// Returns response *grpcproto.InvokeReply and error invocation
 func (c *GrpcEndpoint) invoke(ctx context.Context, request *grpcproto.InvokeRequest) (response *grpcproto.InvokeReply, err error) {
 
 	method := request.Method
-	var action func(correlationId string, args *crun.Parameters) (result interface{}, err error)
+	var action func(ctx context.Context, correlationId string, args *crun.Parameters) (result any, err error)
 	if len(c.commandableMethods) > 0 {
 		action = c.commandableMethods[method]
 	}
@@ -310,7 +322,7 @@ func (c *GrpcEndpoint) invoke(ctx context.Context, request *grpcproto.InvokeRequ
 
 		var errDesc grpcproto.ErrorDescription
 		errDescJson, _ := json.Marshal(appErr)
-		json.Unmarshal(errDescJson, errDesc)
+		json.Unmarshal(errDescJson, &errDesc)
 		response = &grpcproto.InvokeReply{
 			Error:       &errDesc,
 			ResultEmpty: true,
@@ -324,20 +336,20 @@ func (c *GrpcEndpoint) invoke(ctx context.Context, request *grpcproto.InvokeRequ
 	var args *crun.Parameters = crun.NewEmptyParameters()
 
 	if !argsEmpty && argsJson != "" {
-		var buf map[string]interface{}
+		var buf map[string]any
 		err := json.Unmarshal([]byte(argsJson), &buf)
 		if err == nil {
 			args.Append(buf)
 		}
 	}
 	// Call command action
-	result, err := action(correlationId, args)
+	result, err := action(ctx, correlationId, args)
 	// Process result and generate response
 	if err != nil {
 		appErr := cerr.ErrorDescriptionFactory.Create(err)
 		var errDesc grpcproto.ErrorDescription
 		errDescJson, _ := json.Marshal(appErr)
-		json.Unmarshal(errDescJson, errDesc)
+		json.Unmarshal(errDescJson, &errDesc)
 		response = &grpcproto.InvokeReply{
 			Error:       &errDesc,
 			ResultEmpty: true,
@@ -354,15 +366,17 @@ func (c *GrpcEndpoint) invoke(ctx context.Context, request *grpcproto.InvokeRequ
 	return response, err
 }
 
-// RegisterCommadableMethod method are registers a commandable method in c objects GRPC server (service) by the given name.,
-//   - method        the GRPC method name.
-//   - schema        the schema to use for parameter validation.
-//   - action        the action to perform at the given route.
+// RegisterCommadableMethod method are registers a commandable method in c objects GRPC server (service) by the given name.
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- method        the GRPC method name.
+//		- schema        the schema to use for parameter validation.
+//		- action        the action to perform at the given route.
 func (c *GrpcEndpoint) RegisterCommadableMethod(method string, schema *cvalid.Schema,
-	action func(correlationId string, args *crun.Parameters) (result interface{}, err error)) {
+	action func(ctx context.Context, correlationId string, args *crun.Parameters) (result any, err error)) {
 
 	if c.commandableMethods == nil {
-		c.commandableMethods = make(map[string]func(correlationId string, args *crun.Parameters) (result interface{}, err error))
+		c.commandableMethods = make(map[string]func(ctx context.Context, correlationId string, args *crun.Parameters) (result any, err error))
 	}
 	c.commandableMethods[method] = action
 	if c.commandableSchemas == nil {

@@ -1,6 +1,7 @@
 package test_services
 
 import (
+	"context"
 	"testing"
 
 	cconf "github.com/pip-services3-gox/pip-services3-commons-gox/config"
@@ -9,19 +10,18 @@ import (
 )
 
 func TestGrpcEndpoint(t *testing.T) {
+	ctx := context.Background()
 
 	grpcConfig := cconf.NewConfigParamsFromTuples(
 		"connection.protocol", "http",
 		"connection.host", "localhost",
-		"connection.port", 3000,
+		"connection.port", 3005,
 	)
 
-	var endpoint *grpcservices.GrpcEndpoint
+	endpoint := grpcservices.NewGrpcEndpoint()
+	endpoint.Configure(ctx, grpcConfig)
 
-	endpoint = grpcservices.NewGrpcEndpoint()
-	endpoint.Configure(grpcConfig)
-
-	endpoint.Open("")
+	endpoint.Open(ctx, "")
 	assert.True(t, endpoint.IsOpen())
-	endpoint.Close("")
+	endpoint.Close(ctx, "")
 }

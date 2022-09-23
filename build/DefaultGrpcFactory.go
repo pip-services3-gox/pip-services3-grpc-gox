@@ -12,7 +12,7 @@ import (
 // See HeartbeatGrpcService
 // See StatusGrpcService
 type DefaultGrpcFactory struct {
-	cbuild.Factory
+	*cbuild.Factory
 	Descriptor             *cref.Descriptor
 	GrpcEndpointDescriptor *cref.Descriptor
 	//  StatusServiceDescriptor *cref.Descriptor = new Descriptor("pip-services", "status-service", "grpc", "*", "1.0");
@@ -23,7 +23,7 @@ type DefaultGrpcFactory struct {
 func NewDefaultGrpcFactory() *DefaultGrpcFactory {
 
 	c := DefaultGrpcFactory{
-		Factory: *cbuild.NewFactory(),
+		Factory: cbuild.NewFactory(),
 	}
 	c.Descriptor = cref.NewDescriptor("pip-services", "factory", "grpc", "default", "1.0")
 	c.GrpcEndpointDescriptor = cref.NewDescriptor("pip-services", "endpoint", "grpc", "*", "1.0")

@@ -1,16 +1,11 @@
 package test_clients
 
 import (
-	"reflect"
+	"context"
 
 	cdata "github.com/pip-services3-gox/pip-services3-commons-gox/data"
 	grpcclients "github.com/pip-services3-gox/pip-services3-grpc-gox/clients"
 	tdata "github.com/pip-services3-gox/pip-services3-grpc-gox/test/data"
-)
-
-var (
-	dummyDataPageType = reflect.TypeOf(&tdata.DummyDataPage{})
-	dummyType         = reflect.TypeOf(&tdata.Dummy{})
 )
 
 type DummyCommandableGrpcClient struct {
@@ -23,68 +18,68 @@ func NewDummyCommandableGrpcClient() *DummyCommandableGrpcClient {
 	return &dcgc
 }
 
-func (c *DummyCommandableGrpcClient) GetDummies(correlationId string, filter *cdata.FilterParams, paging *cdata.PagingParams) (result *tdata.DummyDataPage, err error) {
+func (c *DummyCommandableGrpcClient) GetDummies(ctx context.Context, correlationId string, filter *cdata.FilterParams, paging *cdata.PagingParams) (result *tdata.DummyDataPage, err error) {
 
 	params := cdata.NewEmptyStringValueMap()
 	c.AddFilterParams(params, filter)
 	c.AddPagingParams(params, paging)
 
-	calValue, calErr := c.CallCommand(dummyDataPageType, "get_dummies", correlationId, cdata.NewAnyValueMapFromValue(params.Value()))
+	response, calErr := c.CallCommand(ctx, "get_dummies", correlationId, cdata.NewAnyValueMapFromValue(params.Value()))
 	if calErr != nil {
 		return nil, calErr
 	}
-	result, _ = calValue.(*tdata.DummyDataPage)
-	return result, err
+
+	return grpcclients.HandleHttpResponse[*tdata.DummyDataPage](response, correlationId)
 }
 
-func (c *DummyCommandableGrpcClient) GetDummyById(correlationId string, dummyId string) (result *tdata.Dummy, err error) {
+func (c *DummyCommandableGrpcClient) GetDummyById(ctx context.Context, correlationId string, dummyId string) (result *tdata.Dummy, err error) {
 
 	params := cdata.NewEmptyAnyValueMap()
 	params.Put("dummy_id", dummyId)
 
-	calValue, calErr := c.CallCommand(dummyType, "get_dummy_by_id", correlationId, params)
+	response, calErr := c.CallCommand(ctx, "get_dummy_by_id", correlationId, params)
 	if calErr != nil {
 		return nil, calErr
 	}
-	result, _ = calValue.(*tdata.Dummy)
-	return result, err
+
+	return grpcclients.HandleHttpResponse[*tdata.Dummy](response, correlationId)
 }
 
-func (c *DummyCommandableGrpcClient) CreateDummy(correlationId string, dummy tdata.Dummy) (result *tdata.Dummy, err error) {
+func (c *DummyCommandableGrpcClient) CreateDummy(ctx context.Context, correlationId string, dummy tdata.Dummy) (result *tdata.Dummy, err error) {
 
 	params := cdata.NewEmptyAnyValueMap()
 	params.Put("dummy", dummy)
 
-	calValue, calErr := c.CallCommand(dummyType, "create_dummy", correlationId, params)
+	response, calErr := c.CallCommand(ctx, "create_dummy", correlationId, params)
 	if calErr != nil {
 		return nil, calErr
 	}
-	result, _ = calValue.(*tdata.Dummy)
-	return result, err
+
+	return grpcclients.HandleHttpResponse[*tdata.Dummy](response, correlationId)
 }
 
-func (c *DummyCommandableGrpcClient) UpdateDummy(correlationId string, dummy tdata.Dummy) (result *tdata.Dummy, err error) {
+func (c *DummyCommandableGrpcClient) UpdateDummy(ctx context.Context, correlationId string, dummy tdata.Dummy) (result *tdata.Dummy, err error) {
 
 	params := cdata.NewEmptyAnyValueMap()
 	params.Put("dummy", dummy)
 
-	calValue, calErr := c.CallCommand(dummyType, "update_dummy", correlationId, params)
+	response, calErr := c.CallCommand(ctx, "update_dummy", correlationId, params)
 	if calErr != nil {
 		return nil, calErr
 	}
-	result, _ = calValue.(*tdata.Dummy)
-	return result, err
+
+	return grpcclients.HandleHttpResponse[*tdata.Dummy](response, correlationId)
 }
 
-func (c *DummyCommandableGrpcClient) DeleteDummy(correlationId string, dummyId string) (result *tdata.Dummy, err error) {
+func (c *DummyCommandableGrpcClient) DeleteDummy(ctx context.Context, correlationId string, dummyId string) (result *tdata.Dummy, err error) {
 
 	params := cdata.NewEmptyAnyValueMap()
 	params.Put("dummy_id", dummyId)
 
-	calValue, calErr := c.CallCommand(dummyType, "delete_dummy", correlationId, params)
+	response, calErr := c.CallCommand(ctx, "delete_dummy_by_id", correlationId, params)
 	if calErr != nil {
 		return nil, calErr
 	}
-	result, _ = calValue.(*tdata.Dummy)
-	return result, err
+
+	return grpcclients.HandleHttpResponse[*tdata.Dummy](response, correlationId)
 }

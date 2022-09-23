@@ -48,17 +48,17 @@ func toError(obj *testproto.ErrorDescription) error {
 	return errors.ApplicationErrorFactory.Create(description)
 }
 
-func fromMap(val map[string]interface{}) map[string]string {
+func fromMap(val map[string]any) map[string]string {
 	r := map[string]string{}
 
 	for k, v := range val {
-		r[k] = convert.ToString(v)
+		r[k] = convert.StringConverter.ToString(v)
 	}
 	return r
 }
 
-func toMap(val map[string]string) map[string]interface{} {
-	var r map[string]interface{}
+func toMap(val map[string]string) map[string]any {
+	r := make(map[string]any)
 
 	for k, v := range val {
 		r[k] = v
@@ -66,7 +66,7 @@ func toMap(val map[string]string) map[string]interface{} {
 	return r
 }
 
-func toJson(value interface{}) string {
+func toJson(value any) string {
 	if value == nil {
 		return ""
 	}
@@ -78,12 +78,12 @@ func toJson(value interface{}) string {
 	return string(b[:])
 }
 
-func fromJson(value string) interface{} {
+func fromJson(value string) any {
 	if value == "" {
 		return nil
 	}
 
-	var m interface{}
+	var m any
 	json.Unmarshal([]byte(value), &m)
 	return m
 }

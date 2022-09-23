@@ -35,7 +35,7 @@ message ErrorDescription {
 
 message PagingParams {
   int64 skip = 1;
-  int32 take = 2;
+  int64 take = 2;
   bool total = 3;
 }
 

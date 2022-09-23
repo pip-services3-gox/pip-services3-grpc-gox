@@ -1,6 +1,7 @@
 package test_clients
 
 import (
+	"context"
 	"testing"
 
 	cconf "github.com/pip-services3-gox/pip-services3-commons-gox/config"
@@ -10,6 +11,8 @@ import (
 )
 
 func TestDummyRestClient(t *testing.T) {
+	ctx := context.Background()
+
 	grpcConfig := cconf.NewConfigParamsFromTuples(
 		"connection.protocol", "http",
 		"connection.host", "localhost",
@@ -23,25 +26,25 @@ func TestDummyRestClient(t *testing.T) {
 	ctrl := tlogic.NewDummyController()
 
 	service = testservices.NewDummyCommandableGrpcService()
-	service.Configure(grpcConfig)
+	service.Configure(ctx, grpcConfig)
 
-	references := cref.NewReferencesFromTuples(
+	references := cref.NewReferencesFromTuples(ctx,
 		cref.NewDescriptor("pip-services-dummies", "controller", "default", "default", "1.0"), ctrl,
 		cref.NewDescriptor("pip-services-dummies", "service", "grpc", "default", "1.0"), service,
 	)
-	service.SetReferences(references)
+	service.SetReferences(ctx, references)
 
-	service.Open("")
+	service.Open(ctx, "")
 
-	defer service.Close("")
+	defer service.Close(ctx, "")
 
 	client = NewDummyCommandableGrpcClient()
 	fixture = NewDummyClientFixture(client)
 
-	client.Configure(grpcConfig)
-	client.SetReferences(cref.NewEmptyReferences())
-	client.Open("")
-	defer client.Close("")
+	client.Configure(ctx, grpcConfig)
+	client.SetReferences(ctx, cref.NewEmptyReferences())
+	client.Open(ctx, "")
+	defer client.Close(ctx, "")
 
 	t.Run("CRUD Operations", fixture.TestCrudOperations)
 

@@ -15,11 +15,12 @@ import (
 )
 
 func TestDummyGrpcService(t *testing.T) {
+	ctx := context.Background()
 
 	grpcConfig := cconf.NewConfigParamsFromTuples(
 		"connection.protocol", "http",
 		"connection.host", "localhost",
-		"connection.port", "3000",
+		"connection.port", "3004",
 	)
 
 	var Dummy1 tdata.Dummy
@@ -31,22 +32,22 @@ func TestDummyGrpcService(t *testing.T) {
 	ctrl := tlogic.NewDummyController()
 
 	service = NewDummyGrpcService()
-	service.Configure(grpcConfig)
+	service.Configure(ctx, grpcConfig)
 
-	references := cref.NewReferencesFromTuples(
+	references := cref.NewReferencesFromTuples(ctx,
 		cref.NewDescriptor("pip-services-dummies", "controller", "default", "default", "1.0"), ctrl,
 		cref.NewDescriptor("pip-services-dummies", "service", "grpc", "default", "1.0"), service,
 	)
-	service.SetReferences(references)
+	service.SetReferences(ctx, references)
 
-	service.Open("")
+	service.Open(ctx, "")
 
-	defer service.Close("")
+	defer service.Close(ctx, "")
 
 	opts := []grpc.DialOption{
 		grpc.WithInsecure(),
 	}
-	conn, err := grpc.Dial("localhost:3000", opts...)
+	conn, err := grpc.Dial("localhost:3004", opts...)
 
 	if err != nil {
 		grpclog.Fatalf("fail to dial: %v", err)

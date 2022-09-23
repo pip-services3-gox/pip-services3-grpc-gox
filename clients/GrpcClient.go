@@ -9,73 +9,75 @@ import (
 	cref "github.com/pip-services3-gox/pip-services3-commons-gox/refer"
 	ccount "github.com/pip-services3-gox/pip-services3-components-gox/count"
 	clog "github.com/pip-services3-gox/pip-services3-components-gox/log"
+	ctrace "github.com/pip-services3-gox/pip-services3-components-gox/trace"
 	grpcproto "github.com/pip-services3-gox/pip-services3-grpc-gox/protos"
 	rpccon "github.com/pip-services3-gox/pip-services3-rpc-gox/connect"
+	"github.com/pip-services3-gox/pip-services3-rpc-gox/services"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 )
 
-/*
-GrpcClient abstract client that calls commandable HTTP service.
-
-Commandable services are generated automatically for ICommandable objects. Each command is exposed as POST operation that receives all parameters in body object.
-
-Configuration parameters:
-
-  base_route: base route for remote URI
-  connection(s):
-  discovery_key: (optional) a key to retrieve the connection from IDiscovery
-  protocol: connection protocol: http or https
-  host: host name or IP address
-  port: port number
-  uri: resource URI or connection string with all parameters in it
-  options:
-  retries: number of retries (default: 3)
-  connect_timeout: connection timeout in milliseconds (default: 10 sec)
-  timeout: invocation timeout in milliseconds (default: 10 sec)
-
-References:
-
-*:logger:*:*:1.0 (optional) ILogger components to pass log messages
-*:counters:*:*:1.0 (optional) ICounters components to pass collected measurements
-*:discovery:*:*:1.0 (optional) IDiscovery services to resolve connection
-
-Example:
-
-type MyCommandableHttpClient struct{
- 	*CommandableHttpClient
-}
-    func  (c *MyCommandableHttpClient) GetData(correlationId string, id string) (res interface{}, err error) {
-
-        req := &testproto.MyDataIdRequest{
-            CorrelationId: correlationId,
-            mydataId:       id,
-        }
-
-        reply := new(testproto.MyData)
-        err = c.Call("get_mydata_by_id", correlationId, req, reply)
-        c.Instrument(correlationId, "mydata.get_one_by_id")
-        if err != nil {
-            return nil, err
-        }
-        result = toMyData(reply)
-        if result != nil && result.Id == "" && result.Key == "" {
-            result = nil
-        }
-        return result, nil
-	}
-
-var client = NewMyCommandableHttpClient();
-client.Configure(NewConfigParamsFromTuples(
-    "connection.protocol", "http",
-    "connection.host", "localhost",
-    "connection.port", 8080,
-));
-
-result, err := client.GetData("123", "1")
-...
-*/
+// GrpcClient abstract client that calls commandable HTTP service.
+//
+// Commandable services are generated automatically for ICommandable objects. Each command is exposed as POST operation that receives all parameters in body object.
+//
+//	Configuration parameters:
+//
+//  	- base_route: base route for remote URI
+//  	- connection(s):
+//  		- discovery_key: (optional) a key to retrieve the connection from IDiscovery
+//  		- protocol: connection protocol: http or https
+//  		- host: host name or IP address
+//  		- port: port number
+//  		- uri: resource URI or connection string with all parameters in it
+//  	- options:
+//  		- retries: number of retries (default: 3)
+//  		- connect_timeout: connection timeout in milliseconds (default: 10 sec)
+//  		- timeout: invocation timeout in milliseconds (default: 10 sec)
+//
+//	References:
+//
+//		- *:logger:*:*:1.0 (optional) ILogger components to pass log messages
+//		- *:counters:*:*:1.0 (optional) ICounters components to pass collected measurements
+//		- *:discovery:*:*:1.0 (optional) IDiscovery services to resolve connection
+//
+// Example:
+//
+//	type MyGrpcClient struct{
+//		*GrpcClient
+//	}
+//
+//	func  (c *MyGrpcClient) GetData(ctx context.Context, correlationId string, id string) (res any, err error) {
+//		req := &testproto.MyDataIdRequest{
+//		    CorrelationId: correlationId,
+//		    mydataId:       id,
+//		}
+//		reply := new(testproto.MyData)
+//		err = c.Call("get_mydata_by_id", correlationId, req, reply)
+//		c.Instrument(correlationId, "mydata.get_one_by_id")
+//		if err != nil {
+//		    return nil, err
+//		}
+//
+//		result = toMyData(reply)
+//		if result != nil && result.Id == "" && result.Key == "" {
+//		    result = nil
+//		}
+//
+//		return result, nil
+//	}
+//
+//	var client = NewMyGrpcClient();
+//	client.Configure(ctx, NewConfigParamsFromTuples(
+//	    "connection.protocol", "http",
+//	    "connection.host", "localhost",
+//	    "connection.port", 8080,
+//	));
+//
+//	result, err := client.GetData(ctx, "123", "1")
+//	...
+//
 type GrpcClient struct {
 	address string
 	name    string
@@ -91,6 +93,8 @@ type GrpcClient struct {
 	Logger *clog.CompositeLogger
 	//	The performance counters.
 	Counters *ccount.CompositeCounters
+	// The tracer.
+	Tracer *ctrace.CompositeTracer
 	//	The configuration options.
 	Options *cconf.ConfigParams
 	//	The connection timeout in milliseconds.
@@ -125,62 +129,72 @@ func NewGrpcClient(name string) *GrpcClient {
 	c.ConnectionResolver = rpccon.NewHttpConnectionResolver()
 	c.Logger = clog.NewCompositeLogger()
 	c.Counters = ccount.NewCompositeCounters()
+	c.Tracer = ctrace.NewCompositeTracer()
 	c.Options = cconf.NewEmptyConfigParams()
 	c.ConnectTimeout = 10000 * time.Millisecond
 	c.Timeout = 10000 * time.Millisecond
-	c.interceptors = make([]grpc.DialOption, 0, 0)
+	c.interceptors = make([]grpc.DialOption, 0)
 	return &c
 }
 
 // Configure method are configures component by passing configuration parameters.
-// Parameters:
-//   - config *config.ConfigParams
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- config *config.ConfigParams
 //   configuration parameters to be set.
-func (c *GrpcClient) Configure(config *cconf.ConfigParams) {
+func (c *GrpcClient) Configure(ctx context.Context, config *cconf.ConfigParams) {
 	host := config.GetAsStringWithDefault("connection.host", "localhost")
 	port := config.GetAsStringWithDefault("connection.port", "8090")
 
 	c.ConnectTimeout = time.Duration(config.GetAsIntegerWithDefault("connection.connect_timeout", 10000)) * time.Millisecond
 	c.Timeout = time.Duration(config.GetAsIntegerWithDefault("connection.timeout", 10000)) * time.Millisecond
-	c.ConnectionResolver.Configure(config)
+	c.ConnectionResolver.Configure(ctx, config)
 	c.address = host + ":" + port
 }
 
 // SetReferences method are sets references to dependent components.
-//   - references  cref.IReferences
-//   references to locate the component dependencies.
-func (c *GrpcClient) SetReferences(references cref.IReferences) {
-	c.Logger.SetReferences(references)
-	c.Counters.SetReferences(references)
-	c.ConnectionResolver.SetReferences(references)
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- references  cref.IReferences
+// references to locate the component dependencies.
+func (c *GrpcClient) SetReferences(ctx context.Context, references cref.IReferences) {
+	c.Logger.SetReferences(ctx, references)
+	c.Counters.SetReferences(ctx, references)
+	c.Tracer.SetReferences(ctx, references)
+	c.ConnectionResolver.SetReferences(ctx, references)
 }
 
 // Instrument method are adds instrumentation to log calls and measure call time.
-// It returns a Timing object that is used to end the time measurement.
-//   - correlationId     (optional) transaction id to trace execution through call chain.
-//   - name              a method name.
-// Returns: Timing object to end the time measurement.
-func (c *GrpcClient) Instrument(correlationId string, name string) *ccount.CounterTiming {
-	c.Logger.Trace(correlationId, "Executing %s method", name)
-	c.Counters.IncrementOne(name + ".call_count")
-	return c.Counters.BeginTiming(name + ".call_time")
+// It returns a services.InstrumentTiming object that is used to end the time measurement.
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- correlationId string (optional) transaction id to trace execution through call chain.
+//		- name string a method name.
+//	Returns: services.InstrumentTiming object to end the time measurement.
+func (c *GrpcClient) Instrument(ctx context.Context, correlationId string, name string) *services.InstrumentTiming {
+	c.Logger.Trace(ctx, correlationId, "Calling %s method", name)
+	c.Counters.IncrementOne(ctx, name+".call_count")
+	counterTiming := c.Counters.BeginTiming(ctx, name+".call_time")
+	traceTiming := c.Tracer.BeginTrace(ctx, correlationId, name, "")
+	return services.NewInstrumentTiming(correlationId, name, "call",
+		c.Logger, c.Counters, counterTiming, traceTiming)
 }
 
-// InstrumentError mrthod are adds instrumentation to error handling.
-//   - correlationId     (optional) transaction id to trace execution through call chain.
-//   - name              a method name.
-//   - err               an occured error
-//   - result            (optional) an execution result
-// Retruns: result interface{}, err error
-// input result and error.
-func (c *GrpcClient) InstrumentError(correlationId string, name string, inErr error, inRes interface{}) (result interface{}, err error) {
-	if inErr != nil {
-		c.Logger.Error(correlationId, inErr, "Failed to call %s method", name)
-		c.Counters.IncrementOne(name + ".call_errors")
-	}
+// // InstrumentError mrthod are adds instrumentation to error handling.
+// //   - correlationId     (optional) transaction id to trace execution through call chain.
+// //   - name              a method name.
+// //   - err               an occured error
+// //   - result            (optional) an execution result
+// // Retruns: result any, err error
+// // input result and error.
+// func (c *GrpcClient) InstrumentError(ctx context.Context, correlationId string, name string, inErr error, inRes any) (result any, err error) {
+// 	if inErr != nil {
+// 		c.Logger.Error(ctx, correlationId, inErr, "Failed to call %s method", name)
+// 		c.Counters.IncrementOne(ctx, name+".call_errors")
+// 	}
 
-	return inRes, inErr
-}
+// 	return inRes, inErr
+// }
 
 // IsOpen method are checks if the component is opened.
 // Returns bool
@@ -199,12 +213,13 @@ func (c *GrpcClient) AddInterceptors(interceptors ...grpc.DialOption) {
 }
 
 // Open method are opens the component.
-// Parameters:
-//   - correlationId string
-//   transaction id to trace execution through call chain.
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- correlationId string
+// transaction id to trace execution through call chain.
 // Returns error
 // error or nil
-func (c *GrpcClient) Open(correlationId string) error {
+func (c *GrpcClient) Open(ctx context.Context, correlationId string) error {
 
 	if c.IsOpen() {
 		return nil
@@ -214,9 +229,12 @@ func (c *GrpcClient) Open(correlationId string) error {
 		return err
 	}
 	c.Uri = connection.Uri()
+
 	// Set up a connection to the server.
+	ctx, cancel := context.WithTimeout(ctx, c.ConnectTimeout)
+	defer cancel()
+
 	opts := []grpc.DialOption{
-		grpc.WithTimeout(c.ConnectTimeout),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{Timeout: c.Timeout}),
 	}
 
@@ -236,7 +254,7 @@ func (c *GrpcClient) Open(correlationId string) error {
 	} else {
 		opts = append(opts, grpc.WithInsecure())
 	}
-	conn, err := grpc.Dial(c.address, opts...)
+	conn, err := grpc.DialContext(ctx, c.address, opts...)
 	if err != nil {
 		return err
 	}
@@ -246,11 +264,12 @@ func (c *GrpcClient) Open(correlationId string) error {
 }
 
 // Close method are closes component and frees used resources.
-// Parameters:
-//   - correlationId string
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- correlationId string
 //   transaction id to trace execution through call chain.
 // Returns error
-func (c *GrpcClient) Close(correlationId string) error {
+func (c *GrpcClient) Close(ctx context.Context, correlationId string) error {
 	if c.Connection != nil {
 		c.Connection.Close()
 		c.Connection = nil
@@ -259,17 +278,14 @@ func (c *GrpcClient) Close(correlationId string) error {
 }
 
 // Call method are calls a remote method via gRPC protocol.
-// Parameters:
-//   - method string
-//   gRPC method name
-//   - correlationId string
-//   transaction id to trace execution through call chain.
-//   - request interface{}
-//    request query parameters.
-//   - response interface{}
-//   - response body object.
+//	Parameters:
+//		- method string gRPC method name
+//		- correlationId string  transaction id to trace execution through call chain.
+//		- request any request query parameters.
+//		- response any
+//		- response body object.
 // Returns error
-func (c *GrpcClient) Call(method string, correlationId string, request interface{}, response interface{}) error {
+func (c *GrpcClient) Call(method string, correlationId string, request any, response any) error {
 	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
 	defer cancel()
 	method = "/" + c.name + "/" + method
@@ -278,17 +294,15 @@ func (c *GrpcClient) Call(method string, correlationId string, request interface
 }
 
 // CallWithContext method are calls a remote method via gRPC protocol.
-// Parameters:
-//   - ctx context
-//   - correlationId string
-//   transaction id to trace execution through call chain.
-//   - method string//   gRPC method name
-//   - request interface{}
-//    request query parameters.
-//   - response interface{}
-//   - response body object.
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- correlationId string transaction id to trace execution through call chain.
+//		- method string//   gRPC method name
+//		- request any request query parameters.
+//		- response any
+//		- response body object.
 // Returns error
-func (c *GrpcClient) CallWithContext(ctx context.Context, correlationId string, method string, request interface{}, response interface{}) error {
+func (c *GrpcClient) CallWithContext(ctx context.Context, correlationId string, method string, request any, response any) error {
 	method = "/" + c.name + "/" + method
 	err := c.Connection.Invoke(ctx, method, request, response)
 	return err
@@ -296,8 +310,9 @@ func (c *GrpcClient) CallWithContext(ctx context.Context, correlationId string, 
 
 // AddFilterParams method are adds filter parameters (with the same name as they defined)
 // to invocation parameter map.
-//   - params        invocation parameters.
-//   - filter        (optional) filter parameters
+//	Parameters:
+//		- params        invocation parameters.
+//		- filter        (optional) filter parameters
 // Return invocation parameters with added filter parameters.
 func (c *GrpcClient) AddFilterParams(params *cdata.StringValueMap, filter *cdata.FilterParams) *cdata.StringValueMap {
 
@@ -313,8 +328,10 @@ func (c *GrpcClient) AddFilterParams(params *cdata.StringValueMap, filter *cdata
 }
 
 // AddPagingParams method are adds paging parameters (skip, take, total) to invocation parameter map.
-//   - params        invocation parameters.
-//   - paging        (optional) paging parameters
+//	Parameters:
+//		- ctx context.Context	operation context
+//		- params        invocation parameters.
+//		- paging        (optional) paging parameters
 // Return invocation parameters with added paging parameters.
 func (c *GrpcClient) AddPagingParams(params *cdata.StringValueMap, paging *cdata.PagingParams) *cdata.StringValueMap {
 	if params == nil {
@@ -323,12 +340,8 @@ func (c *GrpcClient) AddPagingParams(params *cdata.StringValueMap, paging *cdata
 
 	if paging != nil {
 		params.Put("total", paging.Total)
-		if paging.Skip != nil {
-			params.Put("skip", *paging.Skip)
-		}
-		if paging.Take != nil {
-			params.Put("take", *paging.Take)
-		}
+		params.Put("skip", paging.Skip)
+		params.Put("take", paging.Take)
 	}
 	return params
 }
