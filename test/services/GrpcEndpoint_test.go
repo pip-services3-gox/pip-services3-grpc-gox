@@ -3,6 +3,7 @@ package test_services
 import (
 	"context"
 	"testing"
+	"time"
 
 	cconf "github.com/pip-services3-gox/pip-services3-commons-gox/config"
 	grpcservices "github.com/pip-services3-gox/pip-services3-grpc-gox/services"
@@ -22,6 +23,10 @@ func TestGrpcEndpoint(t *testing.T) {
 	endpoint.Configure(ctx, grpcConfig)
 
 	endpoint.Open(ctx, "")
+
+	// wait server start
+	<-time.After(100 * time.Millisecond)
+
 	assert.True(t, endpoint.IsOpen())
 	endpoint.Close(ctx, "")
 }

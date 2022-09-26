@@ -41,19 +41,18 @@ func TestDummyGrpcService(t *testing.T) {
 	service.SetReferences(ctx, references)
 
 	service.Open(ctx, "")
-
 	defer service.Close(ctx, "")
 
 	opts := []grpc.DialOption{
 		grpc.WithInsecure(),
 	}
-	conn, err := grpc.Dial("localhost:3004", opts...)
 
+	conn, err := grpc.Dial("localhost:3004", opts...)
 	if err != nil {
 		grpclog.Fatalf("fail to dial: %v", err)
 	}
-
 	defer conn.Close()
+
 	client = protos.NewDummiesClient(conn)
 
 	Dummy1 = tdata.Dummy{Id: "", Key: "Key 1", Content: "Content 1"}
@@ -107,7 +106,7 @@ func TestDummyGrpcService(t *testing.T) {
 
 	// Delete dummy
 	idRequest := protos.DummyIdRequest{DummyId: dummy1.Id}
-	dummy, err = client.DeleteDummyById(context.TODO(), &idRequest)
+	_, err = client.DeleteDummyById(context.TODO(), &idRequest)
 	assert.Nil(t, err)
 
 	// Try to get delete dummy

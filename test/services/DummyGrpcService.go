@@ -11,7 +11,6 @@ import (
 	grpcservices "github.com/pip-services3-gox/pip-services3-grpc-gox/services"
 	tdata "github.com/pip-services3-gox/pip-services3-grpc-gox/test/data"
 	tlogic "github.com/pip-services3-gox/pip-services3-grpc-gox/test/logic"
-	"github.com/pip-services3-gox/pip-services3-grpc-gox/test/protos"
 	"google.golang.org/grpc"
 
 	grpcproto "github.com/pip-services3-gox/pip-services3-grpc-gox/test/protos"
@@ -64,7 +63,7 @@ func (c *DummyGrpcService) Open(ctx context.Context, correlationId string) error
 	return c.GrpcService.Open(ctx, correlationId)
 }
 
-func (c *DummyGrpcService) GetDummies(ctx context.Context, req *protos.DummiesPageRequest) (*protos.DummiesPage, error) {
+func (c *DummyGrpcService) GetDummies(ctx context.Context, req *grpcproto.DummiesPageRequest) (*grpcproto.DummiesPage, error) {
 
 	validateErr := c.ValidateRequest(req,
 		&cvalid.NewObjectSchema().
@@ -89,10 +88,10 @@ func (c *DummyGrpcService) GetDummies(ctx context.Context, req *protos.DummiesPa
 		return nil, err
 	}
 
-	result := protos.DummiesPage{}
+	result := grpcproto.DummiesPage{}
 	result.Total = *data.Total
 	for _, v := range data.Data {
-		buf := protos.Dummy{}
+		buf := grpcproto.Dummy{}
 		bytes, _ := json.Marshal(v)
 		json.Unmarshal(bytes, &buf)
 		result.Data = append(result.Data, &buf)
@@ -100,7 +99,7 @@ func (c *DummyGrpcService) GetDummies(ctx context.Context, req *protos.DummiesPa
 	return &result, err
 }
 
-func (c *DummyGrpcService) GetDummyById(ctx context.Context, req *protos.DummyIdRequest) (*protos.Dummy, error) {
+func (c *DummyGrpcService) GetDummyById(ctx context.Context, req *grpcproto.DummyIdRequest) (*grpcproto.Dummy, error) {
 
 	// validation
 	validateErr := c.ValidateRequest(req,
@@ -119,13 +118,13 @@ func (c *DummyGrpcService) GetDummyById(ctx context.Context, req *protos.DummyId
 	if err != nil {
 		return nil, err
 	}
-	result := protos.Dummy{}
+	result := grpcproto.Dummy{}
 	bytes, _ := json.Marshal(data)
 	json.Unmarshal(bytes, &result)
 	return &result, nil
 }
 
-func (c *DummyGrpcService) CreateDummy(ctx context.Context, req *protos.DummyObjectRequest) (*protos.Dummy, error) {
+func (c *DummyGrpcService) CreateDummy(ctx context.Context, req *grpcproto.DummyObjectRequest) (*grpcproto.Dummy, error) {
 
 	// validation
 	validateErr := c.ValidateRequest(req,
@@ -148,13 +147,13 @@ func (c *DummyGrpcService) CreateDummy(ctx context.Context, req *protos.DummyObj
 	if err != nil || data == nil {
 		return nil, err
 	}
-	result := protos.Dummy{}
+	result := grpcproto.Dummy{}
 	bytes, _ = json.Marshal(data)
 	json.Unmarshal(bytes, &result)
 	return &result, nil
 }
 
-func (c *DummyGrpcService) UpdateDummy(ctx context.Context, req *protos.DummyObjectRequest) (*protos.Dummy, error) {
+func (c *DummyGrpcService) UpdateDummy(ctx context.Context, req *grpcproto.DummyObjectRequest) (*grpcproto.Dummy, error) {
 
 	validateErr := c.ValidateRequest(req,
 		&cvalid.NewObjectSchema().
@@ -176,13 +175,13 @@ func (c *DummyGrpcService) UpdateDummy(ctx context.Context, req *protos.DummyObj
 	if err != nil || data == nil {
 		return nil, err
 	}
-	result := protos.Dummy{}
+	result := grpcproto.Dummy{}
 	bytes, _ = json.Marshal(data)
 	json.Unmarshal(bytes, &result)
 	return &result, nil
 }
 
-func (c *DummyGrpcService) DeleteDummyById(ctx context.Context, req *protos.DummyIdRequest) (*protos.Dummy, error) {
+func (c *DummyGrpcService) DeleteDummyById(ctx context.Context, req *grpcproto.DummyIdRequest) (*grpcproto.Dummy, error) {
 
 	validateErr := c.ValidateRequest(req,
 		&cvalid.NewObjectSchema().
@@ -199,12 +198,12 @@ func (c *DummyGrpcService) DeleteDummyById(ctx context.Context, req *protos.Dumm
 	if err != nil || data == nil {
 		return nil, err
 	}
-	result := protos.Dummy{}
+	result := grpcproto.Dummy{}
 	bytes, _ := json.Marshal(data)
 	json.Unmarshal(bytes, &result)
 	return &result, nil
 }
 
 func (c *DummyGrpcService) Register() {
-	protos.RegisterDummiesServer(c.Endpoint.GetServer(), c)
+	grpcproto.RegisterDummiesServer(c.Endpoint.GetServer(), c)
 }

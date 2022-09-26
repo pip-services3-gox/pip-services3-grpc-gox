@@ -35,7 +35,6 @@ func TestDummyRestClient(t *testing.T) {
 	service.SetReferences(ctx, references)
 
 	service.Open(ctx, "")
-
 	defer service.Close(ctx, "")
 
 	client = NewDummyCommandableGrpcClient()

@@ -204,14 +204,14 @@ func (c *GrpcEndpoint) Open(ctx context.Context, correlationId string) (err erro
 	// Start operations
 	c.performRegistrations()
 
-	go func() {
-		servErr := c.server.Serve(lis)
+	go func(server *grpc.Server) {
+		servErr := server.Serve(lis)
 		if servErr != nil {
 			err := cerr.NewConnectionError(correlationId, "CANNOT_CONNECT", "Opening GRPC service failed").
-				Wrap(err).WithDetails("url", c.uri)
+				Wrap(servErr).WithDetails("url", c.uri)
 			panic(err)
 		}
-	}()
+	}(c.server)
 
 	c.logger.Debug(ctx, correlationId, "Opened GRPC service at tcp:\\\\%s", c.uri)
 
