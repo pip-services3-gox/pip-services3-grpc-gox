@@ -366,13 +366,13 @@ func (c *GrpcEndpoint) invoke(ctx context.Context, request *grpcproto.InvokeRequ
 	return response, err
 }
 
-// RegisterCommadableMethod method are registers a commandable method in c objects GRPC server (service) by the given name.
+// RegisterCommandableMethod method are registers a commandable method in c objects GRPC server (service) by the given name.
 //	Parameters:
 //		- ctx context.Context	operation context
 //		- method        the GRPC method name.
 //		- schema        the schema to use for parameter validation.
 //		- action        the action to perform at the given route.
-func (c *GrpcEndpoint) RegisterCommadableMethod(method string, schema *cvalid.Schema,
+func (c *GrpcEndpoint) RegisterCommandableMethod(method string, schema *cvalid.Schema,
 	action func(ctx context.Context, correlationId string, args *crun.Parameters) (result any, err error)) {
 
 	if c.commandableMethods == nil {

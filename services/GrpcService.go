@@ -284,15 +284,15 @@ func (c *GrpcService) Close(ctx context.Context, correlationId string) (err erro
 	return nil
 }
 
-// RegisterCommadableMethod method are registers a commandable method in c objects GRPC server (service) by the given name.,
+// RegisterCommandableMethod method are registers a commandable method in c objects GRPC server (service) by the given name.,
 //	Parameters:
 //		- ctx context.Context	operation context
 //		- method        the GRPC method name.
 //		- schema        the schema to use for parameter validation.
 //		- action        the action to perform at the given route.
-func (c *GrpcService) RegisterCommadableMethod(method string, schema *cvalid.Schema,
+func (c *GrpcService) RegisterCommandableMethod(method string, schema *cvalid.Schema,
 	action func(ctx context.Context, correlationId string, data *crun.Parameters) (result any, err error)) {
-	c.Endpoint.RegisterCommadableMethod(method, schema, action)
+	c.Endpoint.RegisterCommandableMethod(method, schema, action)
 }
 
 // Registers a middleware for methods in GRPC endpoint.

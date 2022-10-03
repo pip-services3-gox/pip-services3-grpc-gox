@@ -100,7 +100,7 @@ func (c *CommandableGrpcService) Register() {
 
 		method := c.name + "." + command.Name()
 
-		c.RegisterCommadableMethod(method, nil,
+		c.RegisterCommandableMethod(method, nil,
 			func(ctx context.Context, correlationId string, args *crun.Parameters) (result any, err error) {
 				timing := c.Instrument(ctx, correlationId, method)
 				res, err := command.Execute(ctx, correlationId, args)
