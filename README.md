@@ -6,9 +6,9 @@ The grpc module is used to organize synchronous data exchange using calls throug
 
 The module contains the following packages:
 
-- [**Build**](https://godoc.org/github.com/pip-services3-gox/pip-services3-grpc-gox/build) - factories for creating gRPC services
-- [**Clients**](https://godoc.org/github.com/pip-services3-gox/pip-services3-grpc-gox/clients) - basic client components that use the gRPC protocol and Commandable pattern through gRPC
-- [**Services**](https://godoc.org/github.com/pip-services3-gox/pip-services3-grpc-gox/services) - basic service implementations for connecting via the gRPC protocol and using the Commandable pattern via gRPC
+- **Build** - factories for creating gRPC services
+- **Clients** - basic client components that use the gRPC protocol and Commandable pattern through gRPC
+- **Services** - basic service implementations for connecting via the gRPC protocol and using the Commandable pattern via gRPC
 
 <a name="links"></a> Quick links:
 
