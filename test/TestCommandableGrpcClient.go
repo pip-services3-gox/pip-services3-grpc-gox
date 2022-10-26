@@ -5,11 +5,11 @@ import (
 )
 
 type TestCommandableGrpcClient struct {
-	clients.CommandableGrpcClient
+	*clients.CommandableGrpcClient
 }
 
 func NewTestCommandableGrpcClient(name string) *TestCommandableGrpcClient {
 	c := &TestCommandableGrpcClient{}
-	c.CommandableGrpcClient = *clients.NewCommandableGrpcClient(name)
+	c.CommandableGrpcClient = clients.NewCommandableGrpcClient(name)
 	return c
 }
