@@ -106,7 +106,7 @@ func (c *CommandableGrpcClient) CallCommand(ctx context.Context, name string, co
 	}
 
 	response := &grpcproto.InvokeReply{}
-	err = c.CallWithContext(ctx, correlationId, "invoke", request, response)
+	err = c.CallWithContext(ctx, "invoke", correlationId, request, response)
 
 	timing.EndTiming(ctx, err)
 

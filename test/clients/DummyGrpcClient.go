@@ -35,7 +35,7 @@ func (c *DummyGrpcClient) GetDummies(ctx context.Context, correlationId string, 
 		}
 	}
 	reply := new(testproto.DummiesPage)
-	err = c.CallWithContext(ctx, correlationId, "get_dummies", req, reply)
+	err = c.CallWithContext(ctx, "get_dummies", correlationId, req, reply)
 	c.Instrument(ctx, correlationId, "dummy.get_page_by_filter")
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (c *DummyGrpcClient) GetDummyById(ctx context.Context, correlationId string
 	}
 
 	reply := new(testproto.Dummy)
-	err = c.CallWithContext(ctx, correlationId, "get_dummy_by_id", req, reply)
+	err = c.CallWithContext(ctx, "get_dummy_by_id",correlationId,  req, reply)
 	c.Instrument(ctx, correlationId, "dummy.get_one_by_id")
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (c *DummyGrpcClient) CreateDummy(ctx context.Context, correlationId string,
 	}
 
 	reply := new(testproto.Dummy)
-	err = c.CallWithContext(ctx, correlationId, "create_dummy", req, reply)
+	err = c.CallWithContext(ctx, "create_dummy",correlationId,  req, reply)
 	c.Instrument(ctx, correlationId, "dummy.create")
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func (c *DummyGrpcClient) UpdateDummy(ctx context.Context, correlationId string,
 		Dummy:         fromDummy(&dummy),
 	}
 	reply := new(testproto.Dummy)
-	err = c.CallWithContext(ctx, correlationId, "update_dummy", req, reply)
+	err = c.CallWithContext(ctx, "update_dummy",correlationId,  req, reply)
 	c.Instrument(ctx, correlationId, "dummy.update")
 	if err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func (c *DummyGrpcClient) DeleteDummy(ctx context.Context, correlationId string,
 	}
 
 	reply := new(testproto.Dummy)
-	c.CallWithContext(ctx, correlationId, "delete_dummy_by_id", req, reply)
+	c.CallWithContext(ctx, "delete_dummy_by_id",correlationId,  req, reply)
 	c.Instrument(ctx, correlationId, "dummy.delete_by_id")
 	if err != nil {
 		return nil, err

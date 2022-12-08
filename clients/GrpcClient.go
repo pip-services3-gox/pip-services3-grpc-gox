@@ -296,13 +296,13 @@ func (c *GrpcClient) Call(method string, correlationId string, request any, resp
 // CallWithContext method are calls a remote method via gRPC protocol.
 //	Parameters:
 //		- ctx context.Context	operation context
+//		- method string   gRPC method name
 //		- correlationId string transaction id to trace execution through call chain.
-//		- method string//   gRPC method name
 //		- request any request query parameters.
 //		- response any
 //		- response body object.
 // Returns error
-func (c *GrpcClient) CallWithContext(ctx context.Context, correlationId string, method string, request any, response any) error {
+func (c *GrpcClient) CallWithContext(ctx context.Context, method string, correlationId string, request any, response any) error {
 	method = "/" + c.name + "/" + method
 	err := c.Connection.Invoke(ctx, method, request, response)
 	return err
