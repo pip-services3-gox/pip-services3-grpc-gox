@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 
 	"github.com/pip-services3-gox/pip-services3-commons-gox/convert"
+	"github.com/pip-services3-gox/pip-services3-commons-gox/errors"
 	cerr "github.com/pip-services3-gox/pip-services3-commons-gox/errors"
+	"github.com/pip-services3-gox/pip-services3-grpc-gox/protos"
 	grpcproto "github.com/pip-services3-gox/pip-services3-grpc-gox/protos"
 )
 
@@ -31,4 +33,34 @@ func HandleHttpResponse[T any](r *grpcproto.InvokeReply, correlationId string) (
 	}
 
 	return convert.NewDefaultCustomTypeJsonConvertor[T]().FromJson(r.ResultJson)
+}
+
+func ToError(obj *protos.ErrorDescription) error {
+	if obj == nil || (obj.Category == "" && obj.Message == "") {
+		return nil
+	}
+
+	description := &errors.ErrorDescription{
+		// Type:          obj.Type,
+		Category:      obj.Category,
+		Code:          obj.Code,
+		CorrelationId: obj.CorrelationId,
+		Status:        convert.IntegerConverter.ToInteger(obj.Status),
+		Message:       obj.Message,
+		Cause:         obj.Cause,
+		StackTrace:    obj.StackTrace,
+		Details:       ToMap(obj.Details),
+	}
+
+	return errors.ApplicationErrorFactory.Create(description)
+}
+
+func ToMap(val map[string]string) map[string]interface{} {
+	r := make(map[string]interface{}, 0)
+
+	for k, v := range val {
+		r[k] = v
+	}
+
+	return r
 }

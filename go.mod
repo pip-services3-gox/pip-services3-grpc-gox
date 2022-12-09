@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/pip-services3-gox/pip-services3-commons-gox v1.0.8
 	github.com/pip-services3-gox/pip-services3-components-gox v1.0.7
-	github.com/pip-services3-gox/pip-services3-rpc-gox v1.0.5
+	github.com/pip-services3-gox/pip-services3-rpc-gox v1.0.6
 	github.com/stretchr/testify v1.8.1
 	google.golang.org/grpc v1.51.0
 	google.golang.org/protobuf v1.28.1

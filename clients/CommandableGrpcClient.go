@@ -115,5 +115,10 @@ func (c *CommandableGrpcClient) CallCommand(ctx context.Context, name string, co
 		return response, err
 	}
 
+	// Handle response error
+	if response.Error != nil {
+		return response, ToError(response.Error)
+	}
+
 	return response, nil
 }

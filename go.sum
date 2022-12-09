@@ -38,8 +38,8 @@ github.com/pip-services3-gox/pip-services3-commons-gox v1.0.8 h1:FNbEQ+kA8r3vijy
 github.com/pip-services3-gox/pip-services3-commons-gox v1.0.8/go.mod h1:XOODsMiG196E8/Uo4tRDqjHH3bGZ9ZfcZhKS+BSznOY=
 github.com/pip-services3-gox/pip-services3-components-gox v1.0.7 h1:tro7B7/LqjHYRHL1TtjEt1Mswj8OeOrlgSyqPIpCh+Q=
 github.com/pip-services3-gox/pip-services3-components-gox v1.0.7/go.mod h1:5tP0iG3jnXta6lKC5kBnJ1Bx8A4QIWrL5955QsbzJzM=
-github.com/pip-services3-gox/pip-services3-rpc-gox v1.0.5 h1:ftVKgQEEdRZ0j/a7Ved2HiBjiZrELASlJAe58FqpPZI=
-github.com/pip-services3-gox/pip-services3-rpc-gox v1.0.5/go.mod h1:eM1ayE1HrV4vwmdJGvvTKw0BAYgZ0jIt3JxvzZ/Ydeo=
+github.com/pip-services3-gox/pip-services3-rpc-gox v1.0.6 h1:0zN3pKZ/Hhnfx0b6Bndps8NkMkgN57PUEO17tSJESTo=
+github.com/pip-services3-gox/pip-services3-rpc-gox v1.0.6/go.mod h1:VE9AtfFYLisbuYxzV+UtF3KO1avNCE4RGc/lJrUoVZo=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
