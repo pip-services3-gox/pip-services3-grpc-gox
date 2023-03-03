@@ -8,7 +8,7 @@ type TestGrpcClient struct {
 	*clients.GrpcClient
 }
 
-func NewTestRestClient(name string) *TestGrpcClient {
+func NewTestGrpcClient(name string) *TestGrpcClient {
 	c := &TestGrpcClient{}
 	c.GrpcClient = clients.NewGrpcClient(name)
 	return c
